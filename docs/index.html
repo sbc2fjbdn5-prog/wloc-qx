@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>本地会员 QX 测试</title>
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        color: #162033;
+        background: #eef3f9;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(circle at top, #d9f7e8, #eef3f9 45%);
+      }
+
+      main {
+        width: min(100%, 520px);
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 18px 55px rgba(38, 65, 97, 0.16);
+      }
+
+      h1 { margin: 0 0 8px; font-size: 28px; }
+      .subtitle { margin: 0 0 22px; color: #657186; }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 16px;
+        background: #f3f5f8;
+        font-weight: 700;
+      }
+
+      .status.active { color: #087443; background: #dcf8e9; }
+      .status.free { color: #9a5610; background: #fff1dc; }
+      .dot { width: 12px; height: 12px; border-radius: 50%; background: currentColor; }
+
+      dl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        margin: 22px 0;
+      }
+
+      dt { color: #657186; }
+      dd { margin: 0; font-weight: 700; }
+
+      button {
+        width: 100%;
+        border: 0;
+        border-radius: 14px;
+        padding: 13px 16px;
+        color: white;
+        background: #1677ff;
+        font: inherit;
+        font-weight: 700;
+      }
+
+      pre {
+        margin: 18px 0 0;
+        padding: 14px;
+        overflow: auto;
+        border-radius: 14px;
+        color: #d9e7ff;
+        background: #172033;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+
+      footer { margin-top: 16px; color: #7b8798; font-size: 12px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>本地会员状态</h1>
+      <p class="subtitle">Quantumult X 自有接口重写验证</p>
+
+      <section id="status" class="status">
+        <span class="dot"></span>
+        <span id="statusText">正在读取接口…</span>
+      </section>
+
+      <dl>
+        <dt>登录状态</dt><dd id="auth">—</dd>
+        <dt>会员状态</dt><dd id="premium">—</dd>
+        <dt>套餐</dt><dd id="plan">—</dd>
+      </dl>
+
+      <button id="refresh" type="button">重新检测</button>
+      <pre id="raw">等待响应…</pre>
+      <footer>仅用于本仓库测试接口，不连接第三方账号系统</footer>
+    </main>
+
+    <script>
+      const endpoint =
+        "https://raw.githubusercontent.com/sbc2fjbdn5-prog/wloc-qx/refs/heads/main/examples/mock-account-info.json";
+
+      async function checkMembership() {
+        const status = document.querySelector("#status");
+        const statusText = document.querySelector("#statusText");
+
+        status.className = "status";
+        statusText.textContent = "正在读取接口…";
+
+        try {
+          const response = await fetch(`${endpoint}?v=${Date.now()}`, {
+            cache: "no-store",
+          });
+          const data = await response.json();
+          const premium = data.premium === true || data.isPremium === true;
+
+          status.className = `status ${premium ? "active" : "free"}`;
+          statusText.textContent = premium ? "本地会员已激活" : "当前为免费状态";
+          document.querySelector("#auth").textContent = data.auth ? "已识别" : "未登录";
+          document.querySelector("#premium").textContent = premium ? "已开启" : "未开启";
+          document.querySelector("#plan").textContent = data.plan || "free";
+          document.querySelector("#raw").textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+          status.className = "status free";
+          statusText.textContent = "接口读取失败";
+          document.querySelector("#raw").textContent = String(error);
+        }
+      }
+
+      document.querySelector("#refresh").addEventListener("click", checkMembership);
+      checkMembership();
+    </script>
+  </body>
+</html>
